@@ -11,6 +11,18 @@ public enum TerminalCursorStyle: String, Sendable, Hashable {
     case underline
 }
 
+/// Controls how custom (Shadertoy-style) shaders animate.
+///
+/// Maps to Ghostty's `custom-shader-animation` configuration value.
+public enum TerminalCustomShaderAnimation: String, Sendable, Hashable {
+    /// Shaders never animate (`false`).
+    case disabled = "false"
+    /// Shaders animate only while the surface is focused (`true`).
+    case enabled = "true"
+    /// Shaders animate even while the surface is unfocused (`always`).
+    case always
+}
+
 public enum TerminalConfigCommand: Sendable, Hashable {
     // Font
     case fontFamily(String)
@@ -41,6 +53,10 @@ public enum TerminalConfigCommand: Sendable, Hashable {
     // Layout
     case windowPaddingX(Int)
     case windowPaddingY(Int)
+
+    // Custom shaders (Shadertoy-style post-processing)
+    case customShader(String)
+    case customShaderAnimation(TerminalCustomShaderAnimation)
 
     /// Escape hatch
     case custom(key: String, value: String)
@@ -106,6 +122,12 @@ public enum TerminalConfigCommand: Sendable, Hashable {
 
         case let .windowPaddingY(value):
             "window-padding-y = \(value)"
+
+        case let .customShader(path):
+            "custom-shader = \(path)"
+
+        case let .customShaderAnimation(value):
+            "custom-shader-animation = \(value.rawValue)"
 
         case let .custom(key, value):
             "\(key) = \(value)"
@@ -206,6 +228,18 @@ public struct TerminalConfiguration: Sendable, Hashable {
 
         public mutating func withWindowPaddingY(_ value: Int) {
             commands.append(.windowPaddingY(value))
+        }
+
+        /// Custom shaders
+        ///
+        /// Appends a Shadertoy-style GLSL shader by file path. Call multiple
+        /// times to chain shaders; they are applied in the order added.
+        public mutating func withCustomShader(_ path: String) {
+            commands.append(.customShader(path))
+        }
+
+        public mutating func withCustomShaderAnimation(_ value: TerminalCustomShaderAnimation) {
+            commands.append(.customShaderAnimation(value))
         }
 
         /// Escape hatch
@@ -325,6 +359,20 @@ public struct TerminalConfiguration: Sendable, Hashable {
 
     public func windowPaddingY(_ value: Int) -> TerminalConfiguration {
         appending(.windowPaddingY(value))
+    }
+
+    // MARK: - Custom Shaders
+
+    /// Adds a Shadertoy-style GLSL post-processing shader by file path.
+    ///
+    /// Chain multiple calls to apply several shaders in order. Requires a
+    /// `libghostty` built with custom-shader support.
+    public func customShader(_ path: String) -> TerminalConfiguration {
+        appending(.customShader(path))
+    }
+
+    public func customShaderAnimation(_ value: TerminalCustomShaderAnimation) -> TerminalConfiguration {
+        appending(.customShaderAnimation(value))
     }
 
     // MARK: - Escape Hatch

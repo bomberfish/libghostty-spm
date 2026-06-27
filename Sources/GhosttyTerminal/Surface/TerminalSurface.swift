@@ -18,6 +18,10 @@ public final class TerminalSurface {
     private var surface: ghostty_surface_t?
     private var hasBeenFreed = false
 
+    /// Lazily created inspector wrapper, cached so repeated `inspector()`
+    /// calls return the same instance. Owned by this surface.
+    var cachedInspector: TerminalInspector?
+
     init(_ surface: ghostty_surface_t) {
         self.surface = surface
     }
@@ -353,6 +357,10 @@ public final class TerminalSurface {
         guard !hasBeenFreed, let s = surface else { return }
         TerminalDebugLog.log(.lifecycle, "surface free")
         hasBeenFreed = true
+        // The inspector is owned by the surface and freed by
+        // `ghostty_surface_free`. Drop our wrapper first so it can no longer
+        // be used (its `isValid` becomes false once `surface` is nil).
+        cachedInspector = nil
         surface = nil
         ghostty_surface_free(s)
     }
