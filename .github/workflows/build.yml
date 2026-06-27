@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: ""
+      skip_release:
+        description: "Build, test, and upload the XCFramework artifact only; do not publish a release."
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: "23 6 * * 1"
 

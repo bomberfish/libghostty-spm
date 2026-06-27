@@ -75,8 +75,8 @@ ShellCraftKit   Swift      Sandboxed command engine backed by InMemoryTerminalSe
 <tr><td>Terminal core</td><td>Included</td><td>VT parser, state machine, grid.</td></tr>
 <tr><td>Metal renderer</td><td>Included</td><td>CAMetalLayer / IOSurface rendering.</td></tr>
 <tr><td>CoreText font backend</td><td>Included</td><td>Apple text shaping and rasterization.</td></tr>
-<tr><td>Custom shaders</td><td>Disabled</td><td>Embedded apps get a smaller dependency graph.</td></tr>
-<tr><td>Inspector UI</td><td>Disabled</td><td>Host apps own diagnostics UI.</td></tr>
+<tr><td>Custom shaders</td><td>Included</td><td>glslang / spirv-cross retained for Shadertoy post-processing. Diverges from upstream trimmed build.</td></tr>
+<tr><td>Inspector UI</td><td>Included</td><td>dcimgui retained for the terminal inspector. Diverges from upstream trimmed build.</td></tr>
 <tr><td>Native app runtime</td><td>Disabled</td><td>UIKit/AppKit/SwiftUI hosts provide the runtime.</td></tr>
 <tr><td>Host-managed I/O backend</td><td>Added</td><td>Sandbox-friendly terminal transport.</td></tr>
 <tr><td>iOS platform fixes</td><td>Added</td><td>Metal row alignment, simulator fixes, deployment-target adjustments.</td></tr>
