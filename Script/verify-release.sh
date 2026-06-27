@@ -44,7 +44,13 @@ if [ -z "$download_url" ] || [ -z "$checksum" ]; then
     exit 1
 fi
 
-expected_url="https://github.com/Lakr233/libghostty-spm/releases/download/$STORAGE_RELEASE_TAG/$ASSET_NAME"
+REPO="${GITHUB_REPOSITORY:-}"
+if [ -z "$REPO" ]; then
+    origin=$(git config --get remote.origin.url 2>/dev/null || echo "")
+    REPO=$(printf '%s' "$origin" | sed -E 's#^(https://github.com/|git@github.com:)##; s#\.git$##')
+fi
+
+expected_url="https://github.com/$REPO/releases/download/$STORAGE_RELEASE_TAG/$ASSET_NAME"
 if [ "$download_url" != "$expected_url" ]; then
     echo "[!] Package.swift download URL does not match storage release"
     echo "    expected: $expected_url"
