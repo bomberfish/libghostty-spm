@@ -45,6 +45,67 @@ import GhosttyKit
         override func touchesCancelled(_: Set<UITouch>, with _: UIEvent?) {
             viewState?.surface?.inspector()?.mouseButton(false, button: .left)
         }
+
+        // MARK: Hardware keyboard
+
+        override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+            var handled = false
+            for press in presses {
+                guard let key = press.key else { continue }
+                handleInspectorPress(key, action: GHOSTTY_ACTION_PRESS)
+                handled = true
+            }
+            if !handled { super.pressesBegan(presses, with: event) }
+        }
+
+        override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+            var handled = false
+            for press in presses {
+                guard let key = press.key else { continue }
+                handleInspectorPress(key, action: GHOSTTY_ACTION_RELEASE)
+                handled = true
+            }
+            if !handled { super.pressesEnded(presses, with: event) }
+        }
+
+        private func handleInspectorPress(_ key: UIKey, action: ghostty_input_action_e) {
+            guard let inspector = viewState?.surface?.inspector() else { return }
+            let mods = TerminalInputModifiers(from: key.modifierFlags)
+
+            if let mapped = Self.inspectorKey(forHIDUsage: key.keyCode) {
+                inspector.sendKey(action: action, key: mapped, mods: mods.ghosttyMods)
+            }
+
+            // Printable text for ImGui text fields. Skip control characters and
+            // shortcut chords (cmd/ctrl held); special keys are sent above.
+            guard action == GHOSTTY_ACTION_PRESS else { return }
+            let chars = key.characters
+            if !mods.contains(.super_), !mods.contains(.ctrl), !chars.isEmpty,
+               let scalar = chars.unicodeScalars.first,
+               scalar.value >= 0x20, scalar.value != 0x7F
+            {
+                inspector.sendText(chars)
+            }
+        }
+
+        /// Maps the HID usages ImGui cares about for text navigation/editing to
+        /// Ghostty's translated key enum. Printable keys arrive as text instead.
+        static func inspectorKey(forHIDUsage usage: UIKeyboardHIDUsage) -> ghostty_input_key_e? {
+            switch usage {
+            case .keyboardDeleteOrBackspace: GHOSTTY_KEY_BACKSPACE
+            case .keyboardReturnOrEnter, .keypadEnter: GHOSTTY_KEY_ENTER
+            case .keyboardTab: GHOSTTY_KEY_TAB
+            case .keyboardEscape: GHOSTTY_KEY_ESCAPE
+            case .keyboardDeleteForward: GHOSTTY_KEY_DELETE
+            case .keyboardLeftArrow: GHOSTTY_KEY_ARROW_LEFT
+            case .keyboardRightArrow: GHOSTTY_KEY_ARROW_RIGHT
+            case .keyboardDownArrow: GHOSTTY_KEY_ARROW_DOWN
+            case .keyboardUpArrow: GHOSTTY_KEY_ARROW_UP
+            case .keyboardHome: GHOSTTY_KEY_HOME
+            case .keyboardEnd: GHOSTTY_KEY_END
+            default: nil
+            }
+        }
     }
 
 #elseif canImport(AppKit)
