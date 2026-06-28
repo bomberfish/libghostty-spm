@@ -64,6 +64,9 @@
             } else {
                 core.stopDisplayLink()
                 core.freeSurface()
+                #if !targetEnvironment(macCatalyst)
+                    stopKeyRepeat()
+                #endif
             }
         }
 
@@ -166,6 +169,9 @@
             let result = super.resignFirstResponder()
             core.setFocus(false)
             onFocusChange?(false)
+            #if !targetEnvironment(macCatalyst)
+                stopKeyRepeat()
+            #endif
             return result
         }
     }

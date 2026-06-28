@@ -9,7 +9,13 @@
 
     extension UITerminalView {
         override open var inputAccessoryView: UIView? {
-            inputAccessoryItems.isEmpty ? nil : terminalInputAccessory
+            guard !inputAccessoryItems.isEmpty else { return nil }
+            // Hide the bar when a hardware keyboard is connected, unless the
+            // host opts back in.
+            if hardwareKeyboardConnected, !showsInputAccessoryViewWithHardwareKeyboard {
+                return nil
+            }
+            return terminalInputAccessory
         }
 
         func handleInputBarKey(_ key: TerminalInputBarKey) {

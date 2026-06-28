@@ -43,6 +43,9 @@
             var softwareKeyboardVisible = false
             var pendingKeyboardDismissOnTouchEnd = false
             var touchDidScrollDuringCurrentTouch = false
+            var hardwareKeyboardConnected = false
+            var keyRepeatTimer: Timer?
+            var repeatingKey: UIKey?
         #endif
 
         #if !targetEnvironment(macCatalyst)
@@ -57,6 +60,31 @@
                     reloadInputViews()
                 }
             }
+
+            /// When `false` (default), the input accessory bar is automatically
+            /// hidden while a hardware keyboard is connected. Set to `true` to
+            /// keep showing the bar even with a hardware keyboard attached.
+            open var showsInputAccessoryViewWithHardwareKeyboard = false {
+                didSet {
+                    guard showsInputAccessoryViewWithHardwareKeyboard != oldValue else { return }
+                    if isFirstResponder { reloadInputViews() }
+                }
+            }
+
+            /// When `true` (default), holding a hardware key repeats it using
+            /// ``keyRepeatInitialDelay`` / ``keyRepeatInterval`` instead of
+            /// triggering iOS's press-and-hold accent menu.
+            open var forcesHardwareKeyRepeat = true {
+                didSet {
+                    if !forcesHardwareKeyRepeat { stopKeyRepeat() }
+                }
+            }
+
+            /// Delay before hardware key repeat begins. Default `0.4`s.
+            open var keyRepeatInitialDelay: TimeInterval = 0.4
+
+            /// Interval between hardware key repeats once repeating. Default `0.07`s.
+            open var keyRepeatInterval: TimeInterval = 0.07
         #endif
 
         open weak var delegate: (any TerminalSurfaceViewDelegate)? {
@@ -134,6 +162,7 @@
             setupPlatformInput()
             #if !targetEnvironment(macCatalyst)
                 setupKeyboardObservers()
+                setupHardwareKeyboardObservers()
             #endif
         }
 

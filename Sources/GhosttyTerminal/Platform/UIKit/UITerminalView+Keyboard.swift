@@ -17,6 +17,9 @@
             for press in presses {
                 guard let key = press.key else { continue }
                 handleKeyPress(key, action: GHOSTTY_ACTION_PRESS)
+                #if !targetEnvironment(macCatalyst)
+                    beginKeyRepeat(for: key)
+                #endif
             }
         }
 
@@ -26,6 +29,9 @@
         ) {
             for press in presses {
                 guard let key = press.key else { continue }
+                #if !targetEnvironment(macCatalyst)
+                    endKeyRepeat(for: key)
+                #endif
                 handleKeyPress(key, action: GHOSTTY_ACTION_RELEASE)
             }
             hardwareKeyHandled = false
@@ -35,6 +41,9 @@
             _ presses: Set<UIPress>,
             with event: UIPressesEvent?
         ) {
+            #if !targetEnvironment(macCatalyst)
+                stopKeyRepeat()
+            #endif
             hardwareKeyHandled = false
             super.pressesCancelled(presses, with: event)
         }
