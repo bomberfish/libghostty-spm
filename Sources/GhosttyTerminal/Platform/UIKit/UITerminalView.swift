@@ -99,7 +99,14 @@
 
         open var configuration: TerminalSurfaceOptions {
             get { core.configuration }
-            set { core.configuration = newValue }
+            set {
+                core.configuration = newValue
+                // Relinquish focus (and dismiss the keyboard/accessory bar) if
+                // the view became read-only while first responder.
+                if newValue.readOnly, isFirstResponder {
+                    resignFirstResponder()
+                }
+            }
         }
 
         var surface: TerminalSurface? {
@@ -111,7 +118,7 @@
         }
 
         override open var canBecomeFirstResponder: Bool {
-            true
+            !core.configuration.readOnly
         }
 
         override public init(frame: CGRect) {

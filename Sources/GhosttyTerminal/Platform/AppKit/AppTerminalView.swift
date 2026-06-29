@@ -32,7 +32,14 @@
 
         open var configuration: TerminalSurfaceOptions {
             get { core.configuration }
-            set { core.configuration = newValue }
+            set {
+                core.configuration = newValue
+                // Relinquish focus if the view became read-only while it was
+                // the window's first responder.
+                if newValue.readOnly, window?.firstResponder === self {
+                    window?.makeFirstResponder(nil)
+                }
+            }
         }
 
         open func setSurfaceVisible(_ visible: Bool) {

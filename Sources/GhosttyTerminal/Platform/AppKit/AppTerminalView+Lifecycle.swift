@@ -32,7 +32,7 @@
         }
 
         override open var acceptsFirstResponder: Bool {
-            true
+            !core.configuration.readOnly
         }
 
         override open func becomeFirstResponder() -> Bool {

@@ -42,6 +42,17 @@ public final class TerminalViewState: ObservableObject {
         return surface.sendText(text)
     }
 
+    /// Whether the terminal rejects user input.
+    ///
+    /// When `true`, the view will not become first responder (no keyboard,
+    /// IME, or input accessory bar) while rendering and programmatic output
+    /// continue — suitable for non-editable previews. Convenience accessor for
+    /// `configuration.readOnly`.
+    public var isReadOnly: Bool {
+        get { configuration.readOnly }
+        set { configuration.readOnly = newValue }
+    }
+
     public convenience init() {
         self.init(configSource: .none)
     }
