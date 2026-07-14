@@ -59,7 +59,7 @@ if [ "$download_url" != "$expected_url" ]; then
 fi
 
 asset_digest=$(
-    gh release view "$STORAGE_RELEASE_TAG" \
+    gh release view "$STORAGE_RELEASE_TAG" --repo "$REPO" \
         --json assets \
         --jq ".assets[] | select(.name == \"$ASSET_NAME\") | .digest"
 )
