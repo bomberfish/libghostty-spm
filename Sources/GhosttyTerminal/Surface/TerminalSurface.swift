@@ -117,8 +117,12 @@ public final class TerminalSurface {
 
     // MARK: - Actions
 
+    /// Invoke a named Ghostty binding action.
+    ///
+    /// Action names use the same syntax as Ghostty's `keybind` configuration,
+    /// such as `copy_to_clipboard` or `scroll_page_lines:-3`.
     @discardableResult
-    func performBindingAction(_ action: String) -> Bool {
+    public func performBindingAction(_ action: String) -> Bool {
         guard let s = surface else {
             TerminalDebugLog.log(.actions, "binding action ignored: missing surface")
             return false
@@ -131,6 +135,22 @@ public final class TerminalSurface {
             "binding action=\(TerminalDebugLog.describe(action)) result=\(result)"
         )
         return result
+    }
+
+    /// Jump the viewport by a number of shell prompts.
+    ///
+    /// Negative offsets move toward older prompts and positive offsets move
+    /// toward newer prompts. This requires prompt markers from Ghostty shell
+    /// integration, or equivalent OSC 133 markers from a host-managed backend.
+    @discardableResult
+    public func jumpToPrompt(by offset: Int16) -> Bool {
+        performBindingAction("jump_to_prompt:\(offset)")
+    }
+
+    /// Reveal an absolute scrollback row, where zero is the first row.
+    @discardableResult
+    public func scrollToRow(_ row: UInt) -> Bool {
+        performBindingAction("scroll_to_row:\(row)")
     }
 
     // MARK: - Rendering
@@ -350,6 +370,31 @@ public final class TerminalSurface {
             return contains
         }
     #endif
+
+    // MARK: - Process
+
+    /// PID of the pty's foreground process group (`tcgetpgrp(pty)`). When the
+    /// user runs a program in the pty this is that program's pid, so hosts can
+    /// correlate a surface with an external process list. Ghostty returns 0
+    /// when the surface has no process yet — surfaced here as nil.
+    var foregroundPid: pid_t? {
+        guard let s = surface else { return nil }
+        let pid = ghostty_surface_foreground_pid(s)
+        return pid == 0 ? nil : pid_t(pid)
+    }
+
+    /// Name of the pty's controlling tty (e.g. `/dev/ttys004`), or nil when the
+    /// surface has no process yet. Useful as a cross-check for ``foregroundPid``.
+    var ttyName: String? {
+        guard let s = surface else { return nil }
+        let str = ghostty_surface_tty_name(s)
+        defer { ghostty_string_free(str) }
+        guard let ptr = str.ptr, str.len > 0 else { return nil }
+        return String(
+            decoding: UnsafeRawBufferPointer(start: ptr, count: Int(str.len)),
+            as: UTF8.self
+        )
+    }
 
     // MARK: - Lifecycle
 
