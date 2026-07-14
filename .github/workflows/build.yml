@@ -64,10 +64,7 @@ jobs:
             BUILD_REF="$INPUT_REF"
             echo "[*] using provided ghostty ref: $BUILD_REF"
           else
-            BUILD_REF=$(
-              gh api "repos/ghostty-org/ghostty/tags?per_page=100" --paginate --jq '.[].name' |
-                python3 -c 'import re, sys; tags = [line.strip() for line in sys.stdin if re.fullmatch(r"v?\d+\.\d+\.\d+", line.strip())]; print(max(tags, key=lambda tag: tuple(int(part) for part in (tag[1:] if tag.startswith("v") else tag).split("."))), end="")'
-            )
+            BUILD_REF="tip"
             echo "[*] upstream ghostty ref: $BUILD_REF"
           fi
 
