@@ -20,46 +20,68 @@ extension TerminalViewState:
     TerminalSurfaceLifecycleDelegate
 {
     public func terminalDidChangeTitle(_ title: String) {
-        self.title = title
+        applyDelegateUpdate { $0.title = title }
     }
 
     public func terminalDidResize(_ size: TerminalGridMetrics) {
-        surfaceSize = size
+        applyDelegateUpdate { $0.surfaceSize = size }
     }
 
     public func terminalDidChangeFocus(_ focused: Bool) {
-        isFocused = focused
+        applyDelegateUpdate { $0.isFocused = focused }
     }
 
     public func terminalDidClose(processAlive: Bool) {
-        onClose?(processAlive)
+        applyDelegateUpdate { $0.onClose?(processAlive) }
     }
 
     public func terminalDidRingBell() {
-        bellCount += 1
-        lastBellAt = Date()
+        applyDelegateUpdate {
+            $0.bellCount += 1
+            $0.lastBellAt = Date()
+        }
     }
 
     public func terminalDidRequestDesktopNotification(title: String, body: String) {
-        lastDesktopNotificationTitle = title
-        lastDesktopNotificationBody = body
-        lastDesktopNotificationAt = Date()
+        applyDelegateUpdate {
+            $0.lastDesktopNotificationTitle = title
+            $0.lastDesktopNotificationBody = body
+            $0.lastDesktopNotificationAt = Date()
+        }
     }
 
     public func terminalDidChangeWorkingDirectory(_ path: String) {
-        workingDirectory = path
+        applyDelegateUpdate { $0.workingDirectory = path }
     }
 
     public func terminalDidFinishCommand(exitCode: Int?, durationNanos: UInt64) {
-        lastCommandExitCode = exitCode
-        lastCommandDurationNanos = durationNanos
+        applyDelegateUpdate {
+            $0.lastCommandExitCode = exitCode
+            $0.lastCommandDurationNanos = durationNanos
+        }
     }
 
     public func terminalDidAttachSurface(_ surface: TerminalSurface) {
-        self.surface = surface
+        applyDelegateUpdate { $0.surface = surface }
     }
 
     public func terminalDidDetachSurface() {
-        surface = nil
+        applyDelegateUpdate { $0.surface = nil }
+    }
+
+    private func applyDelegateUpdate(
+        _ update: @escaping @MainActor (TerminalViewState) -> Void
+    ) {
+        #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+            // AppKit may synchronously emit resize/focus/config actions while
+            // NSViewRepresentable is in updateNSView. Publishing there violates
+            // SwiftUI's update contract, so commit observable state next turn.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                update(self)
+            }
+        #else
+            update(self)
+        #endif
     }
 }
