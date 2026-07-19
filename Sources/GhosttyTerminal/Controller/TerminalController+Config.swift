@@ -8,6 +8,53 @@ import GhosttyKit
 
 extension TerminalController {
     @discardableResult
+    public func reloadConfigSource(
+        willChange: (() -> Void)? = nil
+    ) -> Bool {
+        let baseContents: String
+        switch Self.prepareConfig(source: baseConfigSource) {
+        case let .success(prepared):
+            baseContents = prepared.renderedContents
+            ghostty_config_free(prepared.rawValue)
+            if let url = prepared.managedConfigURL {
+                try? FileManager.default.removeItem(at: url)
+            }
+        case let .failure(issue):
+            lastConfigurationIssue = issue.description
+            Self.reportConfigurationIssue(issue.description)
+            return false
+        }
+
+        let themeConfig = theme.configuration(for: effectiveColorScheme)
+        let nextSource: ConfigSource
+        let nextContents: String
+        if terminalConfiguration.isEmpty, themeConfig.isEmpty {
+            nextSource = baseConfigSource
+            nextContents = baseContents
+        } else {
+            nextContents = GhosttyConfigRenderer.render(
+                baseContents: baseContents,
+                configuration: terminalConfiguration,
+                theme: themeConfig
+            )
+            nextSource = .generated(nextContents)
+        }
+
+        switch Self.prepareConfig(source: nextSource) {
+        case let .success(prepared):
+            willChange?()
+            baseConfigTemplate = baseContents
+            applyPreparedConfigToRuntime(prepared, source: nextSource)
+            renderedConfigContents = nextContents
+            return true
+        case let .failure(issue):
+            lastConfigurationIssue = issue.description
+            Self.reportConfigurationIssue(issue.description)
+            return false
+        }
+    }
+
+    @discardableResult
     public func updateConfigSource(_ source: ConfigSource) -> Bool {
         guard source != configSource else { return true }
 
@@ -158,6 +205,9 @@ extension TerminalController {
         }
 
         ghostty_config_load_file(rawValue, configPath)
+        #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+            ghostty_config_load_recursive_files(rawValue)
+        #endif
         ghostty_config_finalize(rawValue)
 
         let diagnostics = configDiagnostics(from: rawValue)

@@ -35,11 +35,21 @@ public struct TerminalSurfaceView: View {
         )
         .background(.clear)
         .onChange(of: colorScheme) { newScheme in
-            context.adopt(colorScheme: newScheme)
+            adopt(colorScheme: newScheme)
         }
         .onAppear {
-            context.adopt(colorScheme: colorScheme)
+            adopt(colorScheme: colorScheme)
         }
+    }
+
+    private func adopt(colorScheme: ColorScheme) {
+        #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+            DispatchQueue.main.async {
+                context.adopt(colorScheme: colorScheme)
+            }
+        #else
+            context.adopt(colorScheme: colorScheme)
+        #endif
     }
 
     public func terminalFocused(

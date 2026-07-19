@@ -26,6 +26,10 @@ public final class TerminalViewState: ObservableObject {
     @Published public internal(set) var lastCommandExitCode: Int?
     @Published public internal(set) var lastCommandDurationNanos: UInt64?
 
+    #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+        @Published public internal(set) var progressReport: TerminalProgressReport?
+    #endif
+
     public internal(set) weak var surface: TerminalSurface?
 
     @Published public var configuration: TerminalSurfaceOptions = .init()

@@ -58,6 +58,9 @@ extension TerminalViewState:
         applyDelegateUpdate {
             $0.lastCommandExitCode = exitCode
             $0.lastCommandDurationNanos = durationNanos
+            #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+                $0.progressReport = nil
+            #endif
         }
     }
 
@@ -85,3 +88,18 @@ extension TerminalViewState:
         #endif
     }
 }
+
+#if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+    extension TerminalViewState: TerminalSurfaceProgressReportDelegate {
+        public func terminalDidReportProgress(
+            state: TerminalProgressState,
+            percent: Int?
+        ) {
+            applyDelegateUpdate {
+                $0.progressReport = state == .remove
+                    ? nil
+                    : TerminalProgressReport(state: state, percent: percent)
+            }
+        }
+    }
+#endif

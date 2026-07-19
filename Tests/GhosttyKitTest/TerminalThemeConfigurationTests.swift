@@ -217,4 +217,23 @@ struct TerminalThemeConfigurationTests {
         #expect(state.renderedConfig == previousRenderedConfig)
         #expect(state.terminalConfiguration == TerminalConfiguration().fontSize(14))
     }
+
+    @Test
+    func `reload config rereads the same file`() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ghostty-reload-\(UUID().uuidString).conf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try "font-size = 12\n".write(to: url, atomically: true, encoding: .utf8)
+        let state = TerminalViewState(
+            configSource: .file(url.path),
+            theme: TerminalTheme(),
+            terminalConfiguration: TerminalConfiguration()
+        )
+        #expect(state.renderedConfig.contains("font-size = 12"))
+
+        try "font-size = 17\n".write(to: url, atomically: true, encoding: .utf8)
+        #expect(state.reloadConfig())
+        #expect(state.renderedConfig.contains("font-size = 17"))
+        #expect(!state.renderedConfig.contains("font-size = 12"))
+    }
 }

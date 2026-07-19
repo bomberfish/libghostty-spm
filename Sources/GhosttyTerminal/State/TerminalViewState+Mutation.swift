@@ -34,4 +34,12 @@ public extension TerminalViewState {
             self.objectWillChange.send()
         }
     }
+
+    /// Re-read the current base configuration file and update this terminal.
+    @discardableResult
+    func reloadConfig() -> Bool {
+        controller.reloadConfigSource {
+            self.objectWillChange.send()
+        }
+    }
 }

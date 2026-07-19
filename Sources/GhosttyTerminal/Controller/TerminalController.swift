@@ -62,8 +62,8 @@ public final class TerminalController {
     // MARK: - Config Resolution State
 
     /// The base config before theme/colorScheme are applied.
-    private let baseConfigSource: ConfigSource
-    private var baseConfigTemplate: String = ""
+    let baseConfigSource: ConfigSource
+    var baseConfigTemplate: String = ""
 
     /// Per-session configuration overrides (e.g. font size changes).
     public private(set) var terminalConfiguration: TerminalConfiguration

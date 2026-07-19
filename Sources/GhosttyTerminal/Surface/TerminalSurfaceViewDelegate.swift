@@ -45,7 +45,7 @@ public protocol TerminalSurfaceCloseDelegate: TerminalSurfaceViewDelegate {
 // MARK: - Extended action delegates
 
 /// State of an OSC 9;4 / DECSET progress report.
-public enum TerminalProgressState: Sendable {
+public enum TerminalProgressState: Sendable, Equatable {
     case remove
     case set
     case error
@@ -63,6 +63,18 @@ public enum TerminalProgressState: Sendable {
         }
     }
 }
+
+#if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+    public struct TerminalProgressReport: Sendable, Equatable {
+        public let state: TerminalProgressState
+        public let percent: Int?
+
+        public init(state: TerminalProgressState, percent: Int?) {
+            self.state = state
+            self.percent = percent
+        }
+    }
+#endif
 
 /// OSC 9;4 progress report (state + 0-100 percent, nil percent when the
 /// emitter didn't provide one — e.g. INDETERMINATE / REMOVE).
