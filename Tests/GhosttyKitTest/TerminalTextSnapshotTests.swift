@@ -9,6 +9,7 @@
             let state = TerminalViewState()
 
             #expect(state.readScreenText() == nil)
+            #expect(state.readViewportText() == nil)
         }
     }
 #endif
