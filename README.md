@@ -107,6 +107,15 @@ which records prompt boundaries. A host-managed backend must preserve or emit
 equivalent OSC 133 prompt markers. Arbitrary Ghostty actions remain available
 through `performBindingAction(_:)`.
 
+On native macOS, command editors should send command text and Return separately.
+`send(_:)` uses Ghostty's paste path so it can honor bracketed-paste mode; putting
+`"\r"` in the same string keeps Return inside that paste instead of submitting it:
+
+```swift
+guard terminalState.send(command) else { return }
+terminalState.sendKey(.enter)
+```
+
 ## Notes
 
 - `TerminalViewState` is the SwiftUI state container.

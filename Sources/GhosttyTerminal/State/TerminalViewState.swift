@@ -27,6 +27,9 @@ public final class TerminalViewState: ObservableObject {
     @Published public internal(set) var lastCommandDurationNanos: UInt64?
 
     #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+        /// Increments for every OSC 133 command-finished event, including when
+        /// consecutive commands have identical exit codes and durations.
+        @Published public internal(set) var commandFinishedSequence: UInt64 = 0
         @Published public internal(set) var progressReport: TerminalProgressReport?
     #endif
 

@@ -30,7 +30,13 @@ struct TerminalViewRepresentable {
             view.controller = controller
         }
 
-        if !view.configuration.isEquivalent(to: configuration) {
+        let readOnlyChanged: Bool
+        #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+            readOnlyChanged = view.configuration.readOnly != configuration.readOnly
+        #else
+            readOnlyChanged = false
+        #endif
+        if !view.configuration.isEquivalent(to: configuration) || readOnlyChanged {
             view.configuration = configuration
         }
     }

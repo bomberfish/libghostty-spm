@@ -59,6 +59,7 @@ extension TerminalViewState:
             $0.lastCommandExitCode = exitCode
             $0.lastCommandDurationNanos = durationNanos
             #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+                $0.commandFinishedSequence &+= 1
                 $0.progressReport = nil
             #endif
         }
