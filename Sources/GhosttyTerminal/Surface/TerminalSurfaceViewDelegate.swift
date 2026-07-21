@@ -74,6 +74,36 @@ public enum TerminalProgressState: Sendable, Equatable {
             self.percent = percent
         }
     }
+
+    /// Cursor geometry in the terminal view's untransformed point coordinates.
+    /// `x` is the cursor cell midpoint and `y` is its bottom edge.
+    public struct TerminalCursorMetrics: Sendable, Equatable {
+        public let x: Double
+        public let y: Double
+        public let height: Double
+
+        public init(x: Double, y: Double, height: Double) {
+            self.x = x
+            self.y = y
+            self.height = height
+        }
+    }
+
+    public struct TerminalScrollbarMetrics: Sendable, Equatable {
+        public let total: UInt64
+        public let offset: UInt64
+        public let length: UInt64
+
+        public init(total: UInt64, offset: UInt64, length: UInt64) {
+            self.total = total
+            self.offset = offset
+            self.length = length
+        }
+
+        public var isAtBottom: Bool {
+            offset >= total || length >= total - offset
+        }
+    }
 #endif
 
 /// OSC 9;4 progress report (state + 0-100 percent, nil percent when the
@@ -82,6 +112,20 @@ public enum TerminalProgressState: Sendable, Equatable {
 public protocol TerminalSurfaceProgressReportDelegate: TerminalSurfaceViewDelegate {
     func terminalDidReportProgress(state: TerminalProgressState, percent: Int?)
 }
+
+#if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+    /// Reports cursor movement after a rendered frame. Repeated identical
+    /// geometry is coalesced by the platform view.
+    @MainActor
+    public protocol TerminalSurfaceCursorDelegate: TerminalSurfaceViewDelegate {
+        func terminalDidMoveCursor(_ metrics: TerminalCursorMetrics)
+    }
+
+    @MainActor
+    public protocol TerminalSurfaceScrollbarDelegate: TerminalSurfaceViewDelegate {
+        func terminalDidUpdateScrollbar(_ metrics: TerminalScrollbarMetrics)
+    }
+#endif
 
 /// Fires when a shell-integration-aware command exits. `exitCode` is nil
 /// when not reported; `duration` is the wall clock in nanoseconds.

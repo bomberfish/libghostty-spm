@@ -206,6 +206,21 @@
             }
         }
 
+        func reportCursorMetrics() {
+            guard let surface else { return }
+            let point = surface.imePoint()
+            let metrics = TerminalCursorMetrics(
+                x: point.x,
+                y: point.y,
+                height: point.height
+            )
+            guard surface !== lastReportedCursorSurface || metrics != lastReportedCursorMetrics else { return }
+            lastReportedCursorSurface = surface
+            lastReportedCursorMetrics = metrics
+            (delegate as? any TerminalSurfaceCursorDelegate)?
+                .terminalDidMoveCursor(metrics)
+        }
+
         override open func viewDidChangeEffectiveAppearance() {
             super.viewDidChangeEffectiveAppearance()
             updateColorScheme()

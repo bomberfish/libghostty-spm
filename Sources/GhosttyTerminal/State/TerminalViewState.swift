@@ -31,6 +31,8 @@ public final class TerminalViewState: ObservableObject {
         /// consecutive commands have identical exit codes and durations.
         @Published public internal(set) var commandFinishedSequence: UInt64 = 0
         @Published public internal(set) var progressReport: TerminalProgressReport?
+        @Published public internal(set) var cursorMetrics: TerminalCursorMetrics?
+        @Published public internal(set) var scrollbarMetrics: TerminalScrollbarMetrics?
     #endif
 
     public internal(set) weak var surface: TerminalSurface?

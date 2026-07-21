@@ -75,6 +75,18 @@ final class TerminalCallbackBridge {
             (delegate as? any TerminalSurfaceProgressReportDelegate)?
                 .terminalDidReportProgress(state: state, percent: percent)
 
+        case GHOSTTY_ACTION_SCROLLBAR:
+            #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+                let scrollbar = action.action.scrollbar
+                let metrics = TerminalScrollbarMetrics(
+                    total: scrollbar.total,
+                    offset: scrollbar.offset,
+                    length: scrollbar.len
+                )
+                (delegate as? any TerminalSurfaceScrollbarDelegate)?
+                    .terminalDidUpdateScrollbar(metrics)
+            #endif
+
         case GHOSTTY_ACTION_COMMAND_FINISHED:
             let finished = action.action.command_finished
             // int16_t -1 signals unknown exit code.
