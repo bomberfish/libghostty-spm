@@ -73,7 +73,6 @@ extension TerminalViewState:
         applyDelegateUpdate {
             $0.surface = nil
             #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
-                $0.cursorMetrics = nil
                 $0.scrollbarMetrics = nil
             #endif
         }
@@ -99,7 +98,6 @@ extension TerminalViewState:
 #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
     extension TerminalViewState:
         TerminalSurfaceProgressReportDelegate,
-        TerminalSurfaceCursorDelegate,
         TerminalSurfaceScrollbarDelegate
     {
         public func terminalDidReportProgress(
@@ -111,10 +109,6 @@ extension TerminalViewState:
                     ? nil
                     : TerminalProgressReport(state: state, percent: percent)
             }
-        }
-
-        public func terminalDidMoveCursor(_ metrics: TerminalCursorMetrics) {
-            applyDelegateUpdate { $0.cursorMetrics = metrics }
         }
 
         public func terminalDidUpdateScrollbar(_ metrics: TerminalScrollbarMetrics) {

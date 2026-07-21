@@ -3,18 +3,7 @@
     import Testing
 
     @MainActor
-    struct TerminalCursorMetricsTests {
-        @Test
-        func `view state records cursor geometry`() async {
-            let state = TerminalViewState()
-            let metrics = TerminalCursorMetrics(x: 12, y: 34, height: 18)
-
-            state.terminalDidMoveCursor(metrics)
-            await Task.yield()
-
-            #expect(state.cursorMetrics == metrics)
-        }
-
+    struct TerminalScrollbarMetricsTests {
         @Test
         func `scrollbar identifies the live bottom`() {
             #expect(TerminalScrollbarMetrics(total: 100, offset: 80, length: 20).isAtBottom)

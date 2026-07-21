@@ -18,8 +18,6 @@
         var pointerSelectionStartPoint: CGPoint?
         var lastPointerSelectionRect: CGRect?
         var pendingSelectionMenuPoint: CGPoint?
-        var lastReportedCursorMetrics: TerminalCursorMetrics?
-        weak var lastReportedCursorSurface: TerminalSurface?
         var onFocusChange: ((Bool) -> Void)?
 
         open weak var delegate: (any TerminalSurfaceViewDelegate)? {
@@ -104,7 +102,6 @@
             }
             core.onPostRender = { [weak self] in
                 self?.enforceMetalLayerScale()
-                self?.reportCursorMetrics()
             }
         }
 

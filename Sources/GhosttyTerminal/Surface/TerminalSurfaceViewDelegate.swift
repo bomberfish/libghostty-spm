@@ -75,20 +75,6 @@ public enum TerminalProgressState: Sendable, Equatable {
         }
     }
 
-    /// Cursor geometry in the terminal view's untransformed point coordinates.
-    /// `x` is the cursor cell midpoint and `y` is its bottom edge.
-    public struct TerminalCursorMetrics: Sendable, Equatable {
-        public let x: Double
-        public let y: Double
-        public let height: Double
-
-        public init(x: Double, y: Double, height: Double) {
-            self.x = x
-            self.y = y
-            self.height = height
-        }
-    }
-
     public struct TerminalScrollbarMetrics: Sendable, Equatable {
         public let total: UInt64
         public let offset: UInt64
@@ -114,13 +100,6 @@ public protocol TerminalSurfaceProgressReportDelegate: TerminalSurfaceViewDelega
 }
 
 #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
-    /// Reports cursor movement after a rendered frame. Repeated identical
-    /// geometry is coalesced by the platform view.
-    @MainActor
-    public protocol TerminalSurfaceCursorDelegate: TerminalSurfaceViewDelegate {
-        func terminalDidMoveCursor(_ metrics: TerminalCursorMetrics)
-    }
-
     @MainActor
     public protocol TerminalSurfaceScrollbarDelegate: TerminalSurfaceViewDelegate {
         func terminalDidUpdateScrollbar(_ metrics: TerminalScrollbarMetrics)
