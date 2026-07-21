@@ -1,0 +1,14 @@
+#if os(macOS) && canImport(AppKit) && !canImport(UIKit)
+    @testable import GhosttyTerminal
+    import Testing
+
+    @MainActor
+    struct TerminalTextSnapshotTests {
+        @Test
+        func `unattached state has no screen snapshot`() {
+            let state = TerminalViewState()
+
+            #expect(state.readScreenText() == nil)
+        }
+    }
+#endif
