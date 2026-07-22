@@ -132,7 +132,11 @@ final class TerminalSurfaceCoordinator {
         }
 
         bridge.rawSurface = rawSurface
-        let newSurface = TerminalSurface(rawSurface)
+        // Pass the controller so the wrapper pins the Ghostty app alive while it
+        // holds a live surface handle. Otherwise `ghostty_app_free` (controller
+        // deinit) can free this surface out from under the wrapper, leaving a
+        // dangling `rawValue` that crashes the next snapshot read.
+        let newSurface = TerminalSurface(rawSurface, controller: controller)
         surface = newSurface
         newSurface.setOcclusion(effectiveSurfaceVisible)
         controller.shouldProcessWakeup = { [weak self] in

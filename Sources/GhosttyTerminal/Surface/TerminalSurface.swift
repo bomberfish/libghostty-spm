@@ -18,12 +18,24 @@ public final class TerminalSurface {
     private var surface: ghostty_surface_t?
     private var hasBeenFreed = false
 
+    /// Strong reference to the controller that created this surface.
+    ///
+    /// The surface's memory is owned by the Ghostty app, which is owned by the
+    /// controller and freed in `TerminalController.deinit` via
+    /// `ghostty_app_free` — which frees *every* surface without going through
+    /// ``free()``. Retaining the controller here guarantees the app (and thus
+    /// this surface's backing) outlives the wrapper: while `rawValue` is
+    /// non-nil the surface is always valid, so reads such as
+    /// `readLatestPromptVT()` cannot dereference a freed renderer mutex.
+    private var controller: TerminalController?
+
     /// Lazily created inspector wrapper, cached so repeated `inspector()`
     /// calls return the same instance. Owned by this surface.
     var cachedInspector: TerminalInspector?
 
-    init(_ surface: ghostty_surface_t) {
+    init(_ surface: ghostty_surface_t, controller: TerminalController? = nil) {
         self.surface = surface
+        self.controller = controller
     }
 
     var rawValue: ghostty_surface_t? {
@@ -408,6 +420,10 @@ public final class TerminalSurface {
         cachedInspector = nil
         surface = nil
         ghostty_surface_free(s)
+        // This surface is now removed from the app's surface list, so the app
+        // can no longer free it. Drop the controller so we stop pinning the
+        // app alive; `rawValue` is already nil, so later reads are safe.
+        controller = nil
     }
 
     deinit {

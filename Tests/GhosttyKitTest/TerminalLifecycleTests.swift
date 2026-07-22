@@ -1,8 +1,37 @@
 @testable import GhosttyTerminal
+import GhosttyKit
 import Testing
 
 @MainActor
 struct TerminalLifecycleTests {
+    /// A live surface wrapper must keep its controller (and therefore the
+    /// Ghostty app that owns the surface's memory) alive. `ghostty_app_free`
+    /// in `TerminalController.deinit` frees every surface without nilling any
+    /// wrapper's `rawValue`, so if the app could outlive-race the wrapper a
+    /// snapshot read like `readLatestPromptVT()` would dereference a freed
+    /// renderer mutex and crash. The bogus handle is never dereferenced: the
+    /// test performs no reads and never calls `free()`, and `deinit` does not
+    /// touch the surface.
+    @Test
+    func `surface wrapper pins its controller alive until freed`() {
+        weak var weakController: TerminalController?
+        var surface: TerminalSurface?
+
+        do {
+            let controller = TerminalController()
+            weakController = controller
+            let handle = ghostty_surface_t(bitPattern: 0x1)!
+            surface = TerminalSurface(handle, controller: controller)
+        }
+
+        // The wrapper is now the only owner of the controller.
+        #expect(weakController != nil)
+
+        surface = nil
+        _ = surface
+        #expect(weakController == nil)
+    }
+
     @Test
     func `failed surface creation does not retain bridge`() {
         let controller = TerminalController()
