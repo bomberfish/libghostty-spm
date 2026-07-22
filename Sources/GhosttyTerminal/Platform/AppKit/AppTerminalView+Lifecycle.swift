@@ -65,6 +65,7 @@
                 updateColorScheme()
                 core.startDisplayLink()
                 core.requestImmediateTick()
+                applyDesiredFocusIfNeeded()
 
                 NotificationCenter.default.addObserver(
                     self,
@@ -100,10 +101,23 @@
         }
 
         @objc func windowDidBecomeKey(_: Notification) {
+            // If the host asked for focus while the window was inactive, grab it
+            // now that the window is key rather than waiting for a click.
+            applyDesiredFocusIfNeeded()
             let focused = window?.isKeyWindow == true
                 && window?.firstResponder === self
             core.setFocus(focused)
             onFocusChange?(focused)
+        }
+
+        /// Make this view the window's first responder when the host wants focus
+        /// but AppKit hasn't applied it yet (view just entered a window, or the
+        /// window just became key). No-op for read-only surfaces.
+        func applyDesiredFocusIfNeeded() {
+            guard wantsFocus, acceptsFirstResponder, let window else { return }
+            if window.firstResponder !== self {
+                window.makeFirstResponder(self)
+            }
         }
 
         @objc func windowDidResignKey(_: Notification) {

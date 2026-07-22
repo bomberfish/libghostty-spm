@@ -53,7 +53,12 @@ struct TerminalViewRepresentable {
                     _ = view.resignFirstResponder()
                 }
             #elseif canImport(AppKit)
-                guard let view, let window = view.window else { return }
+                guard let view else { return }
+                // Record the desired focus even if the view is not yet in a
+                // window; `viewDidMoveToWindow`/`windowDidBecomeKey` re-apply it
+                // once AppKit is ready.
+                view.wantsFocus = binding.isFocused
+                guard let window = view.window else { return }
                 if binding.isFocused {
                     if window.firstResponder !== view {
                         window.makeFirstResponder(view)

@@ -20,6 +20,13 @@
         var pendingSelectionMenuPoint: CGPoint?
         var onFocusChange: ((Bool) -> Void)?
 
+        /// Whether the host wants this surface to hold keyboard focus. Set from
+        /// the focus binding via `synchronizeFocus`; re-applied when the view
+        /// enters a window or the window becomes key, so programmatic focus set
+        /// before AppKit is ready (e.g. right after a tab opens) is not lost
+        /// until the user clicks the surface.
+        var wantsFocus = false
+
         open weak var delegate: (any TerminalSurfaceViewDelegate)? {
             get { core.delegate }
             set { core.delegate = newValue }
