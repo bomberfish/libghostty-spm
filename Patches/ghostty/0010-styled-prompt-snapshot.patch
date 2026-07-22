@@ -12,7 +12,7 @@ diff --git a/include/ghostty.h b/include/ghostty.h
 diff --git a/src/apprt/embedded.zig b/src/apprt/embedded.zig
 --- a/src/apprt/embedded.zig
 +++ b/src/apprt/embedded.zig
-@@ -1709,6 +1709,50 @@ pub const CAPI = struct {
+@@ -1709,6 +1709,56 @@ pub const CAPI = struct {
          return readTextLocked(surface, core_sel, result);
      }
  
@@ -26,7 +26,13 @@ diff --git a/src/apprt/embedded.zig b/src/apprt/embedded.zig
 +        core_surface.renderer_state.mutex.lock();
 +        defer core_surface.renderer_state.mutex.unlock();
 +
-+        const screen = core_surface.io.terminal.screens.active;
++        // Use `renderer_state.terminal` (a pointer that is valid for the life
++        // of the surface) rather than `io.terminal`, which is only valid once
++        // the IO backend has fully realized. Reading `io.terminal` on a freshly
++        // created surface faults; the sibling `ghostty_surface_read_text` uses
++        // `renderer_state.terminal` for the same reason.
++        const terminal_state = core_surface.renderer_state.terminal;
++        const screen = terminal_state.screens.active;
 +        const selection = screen.latestPromptSelection() orelse return false;
 +        var writer: std.Io.Writer.Allocating = .init(global.alloc);
 +        defer writer.deinit();
@@ -35,9 +41,9 @@ diff --git a/src/apprt/embedded.zig b/src/apprt/embedded.zig
 +            .emit = .vt,
 +            .unwrap = true,
 +            .trim = true,
-+            .background = core_surface.io.terminal.colors.background.get(),
-+            .foreground = core_surface.io.terminal.colors.foreground.get(),
-+            .palette = &core_surface.io.terminal.colors.palette.current,
++            .background = terminal_state.colors.background.get(),
++            .foreground = terminal_state.colors.foreground.get(),
++            .palette = &terminal_state.colors.palette.current,
 +        });
 +        formatter.content = .{ .selection = selection };
 +        formatter.format(&writer.writer) catch |err| {
