@@ -10,6 +10,7 @@
 
             #expect(state.readScreenText() == nil)
             #expect(state.readViewportText() == nil)
+            #expect(state.readLatestPromptVT() == nil)
         }
     }
 #endif

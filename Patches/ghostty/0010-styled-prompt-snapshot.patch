@@ -1,0 +1,102 @@
+diff --git a/include/ghostty.h b/include/ghostty.h
+--- a/include/ghostty.h
++++ b/include/ghostty.h
+@@ -1148,6 +1148,7 @@ bool ghostty_surface_read_selection(ghostty_surface_t, ghostty_text_s*);
+ bool ghostty_surface_read_text(ghostty_surface_t,
+                                ghostty_selection_s,
+                                ghostty_text_s*);
++bool ghostty_surface_read_latest_prompt(ghostty_surface_t, ghostty_text_s*);
+ void ghostty_surface_free_text(ghostty_surface_t, ghostty_text_s*);
+ 
+ #ifdef __APPLE__
+diff --git a/src/apprt/embedded.zig b/src/apprt/embedded.zig
+--- a/src/apprt/embedded.zig
++++ b/src/apprt/embedded.zig
+@@ -1709,6 +1709,50 @@ pub const CAPI = struct {
+         return readTextLocked(surface, core_sel, result);
+     }
+ 
++    /// Read the newest OSC 133 prompt with its terminal styling encoded as VT
++    /// SGR sequences. Returns false until shell integration marks a prompt.
++    export fn ghostty_surface_read_latest_prompt(
++        surface: *Surface,
++        result: *Text,
++    ) bool {
++        const core_surface = &surface.core_surface;
++        core_surface.renderer_state.mutex.lock();
++        defer core_surface.renderer_state.mutex.unlock();
++
++        const screen = core_surface.io.terminal.screens.active;
++        const selection = screen.latestPromptSelection() orelse return false;
++        var writer: std.Io.Writer.Allocating = .init(global.alloc);
++        defer writer.deinit();
++
++        var formatter: terminal.formatter.ScreenFormatter = .init(screen, .{
++            .emit = .vt,
++            .unwrap = true,
++            .trim = true,
++            .background = core_surface.io.terminal.colors.background.get(),
++            .foreground = core_surface.io.terminal.colors.foreground.get(),
++            .palette = &core_surface.io.terminal.colors.palette.current,
++        });
++        formatter.content = .{ .selection = selection };
++        formatter.format(&writer.writer) catch |err| {
++            log.warn("error reading styled prompt err={}", .{err});
++            return false;
++        };
++        const text = writer.toOwnedSliceSentinel(0) catch |err| {
++            log.warn("error allocating styled prompt err={}", .{err});
++            return false;
++        };
++
++        result.* = .{
++            .tl_px_x = -1,
++            .tl_px_y = -1,
++            .offset_start = 0,
++            .offset_len = 0,
++            .text = text.ptr,
++            .text_len = text.len,
++        };
++        return true;
++    }
++
+     fn readTextLocked(
+         surface: *Surface,
+         core_sel: terminal.Selection,
+diff --git a/src/terminal/Screen.zig b/src/terminal/Screen.zig
+--- a/src/terminal/Screen.zig
++++ b/src/terminal/Screen.zig
+@@ -2494,6 +2494,33 @@ pub fn selectionString(
+     return text;
+ }
+ 
++/// Returns the left prompt portion of the newest semantic prompt. This relies
++/// on OSC 133 shell integration and returns null until a prompt has begun.
++pub fn latestPromptSelection(self: *Screen) ?Selection {
++    if (!self.semantic_prompt.seen) return null;
++
++    const bottom = self.pages.getBottomRight(.screen) orelse return null;
++    var prompts = bottom.promptIterator(.left_up, null);
++    const prompt_row = prompts.next() orelse return null;
++
++    var start: ?Pin = null;
++    var end: ?Pin = null;
++    var cells = prompt_row.cellIterator(.right_down, null);
++    while (cells.next()) |pin| {
++        const cell = pin.rowAndCell().cell;
++        switch (cell.semantic_content) {
++            .prompt => {
++                if (start == null and cell.hasText()) start = pin;
++                if (start != null) end = pin;
++            },
++            .input => break,
++            .output => if (start != null and pin.y != prompt_row.y) break,
++        }
++    }
++
++    return Selection.init(start orelse return null, end orelse return null, false);
++}
++
+ pub const SelectLine = struct {
+     /// The pin of some part of the line to select.
+     pin: Pin,
