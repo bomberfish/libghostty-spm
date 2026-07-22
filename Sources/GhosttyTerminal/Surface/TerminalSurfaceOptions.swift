@@ -11,6 +11,12 @@ public struct TerminalSurfaceOptions: Sendable {
     public var backend: TerminalSessionBackend
     public var fontSize: Float?
     public var workingDirectory: String?
+    /// Extra environment variables set in the child process spawned for this
+    /// surface (exec backend). Passed through `ghostty_surface_config_s.env_vars`;
+    /// every process launched from the surface's shell inherits them, which lets
+    /// embedding hosts tag a surface (e.g. `MYAPP_PANE=<uuid>`) and correlate
+    /// externally observed processes back to it.
+    public var envVars: [String: String]
     public var context: TerminalSurfaceContext
 
     /// When `true`, the terminal view does not accept user input — it will not
@@ -25,12 +31,14 @@ public struct TerminalSurfaceOptions: Sendable {
         backend: TerminalSessionBackend = .exec,
         fontSize: Float? = nil,
         workingDirectory: String? = nil,
+        envVars: [String: String] = [:],
         context: TerminalSurfaceContext = .window,
         readOnly: Bool = false
     ) {
         self.backend = backend
         self.fontSize = fontSize
         self.workingDirectory = workingDirectory
+        self.envVars = envVars
         self.context = context
         self.readOnly = readOnly
     }
@@ -41,6 +49,7 @@ public struct TerminalSurfaceOptions: Sendable {
         // trigger a surface rebuild (which would clear terminal content).
         fontSize == other.fontSize
             && workingDirectory == other.workingDirectory
+            && envVars == other.envVars
             && context == other.context
             && backend.isEquivalent(to: other.backend)
     }

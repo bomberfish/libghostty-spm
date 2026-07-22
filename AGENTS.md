@@ -105,6 +105,8 @@ The macOS equivalent uses `NSTextInputClient` in `AppTerminalView+NSTextInputCli
 
 Long-press ≥0.5s on `UITerminalView` (single-finger, iOS only — Catalyst excluded) triggers `TerminalSurfaceTextSelectionRequestDelegate.terminalDidRequestTextSelection(_:)`. The host receives a `TerminalTextSelectionRequest` (viewport text snapshot + UTF-16 `NSRange?` for pre-selection + source point) and is expected to present a host UI (e.g. UITextView sheet). Word detection uses `ghostty_surface_quicklook_word` (Apple-only); `TerminalSelectionAnchor.resolveRange` maps the result to an `NSRange` via NSString UTF-16 calculations. Same-row duplicate occurrences are disambiguated by `pointX / cellWidthPoints`; callers must convert `cellPixels / displayScale → points` so ghostty's `tl_px_x/y` host-point units match. Prefix CJK full-width characters can shift cell-vs-UTF-16 columns and degrade disambiguation (ASCII-only correct, best-effort otherwise). The recognizer is gated by `gestureRecognizerShouldBegin` to stay inactive when no host has opted in. MVP supports only the `inMemory` backend.
 
+In iPhone UI tests, synthesize ordinary terminal taps as explicitly short presses and verify `hasKeyboardFocus` before `typeText`; a loaded hosted runner can stretch `tap()` long enough for the selection recognizer to present its sheet. Keep the ordinary XCTest tap and typing path on iPad, where short presses do not reliably publish keyboard focus through accessibility.
+
 ### Manifest Sync
 
 When changing SwiftPM products, targets, or test dependencies, update all three together:
@@ -112,6 +114,13 @@ When changing SwiftPM products, targets, or test dependencies, update all three 
 - `Package.swift` — production manifest (remote XCFramework URL + checksum)
 - `Package.local.swift` — local development (path-based binary target)
 - `Package.swift.template` — CI template with `__DOWNLOAD_URL__` / `__CHECKSUM__` placeholders
+
+### Release Versioning
+
+- Bare semantic-version tags are GhosttyKit Swift package versions, independent of Ghostty upstream versions.
+- `Ghostty.ref` pins release builds to one immutable upstream commit; update it in a reviewed change instead of inferring an upstream ref from the package version.
+- `storage.<package-version>` owns the XCFramework asset referenced by the matching package tag.
+- arm64e release slices must contain real ARM64E Mach-O members and adapt pointer-authenticated callback, Block, Objective-C IMP, and system callback boundaries; never satisfy the architecture by changing only a fat-archive label.
 
 ## Swift Code Style
 
