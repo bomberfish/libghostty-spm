@@ -26,12 +26,15 @@ public final class TerminalViewState: ObservableObject {
     @Published public internal(set) var lastCommandExitCode: Int?
     @Published public internal(set) var lastCommandDurationNanos: UInt64?
 
+    /// Latest scrollbar geometry reported by the terminal (nil until the first
+    /// update). Drives a host-drawn scrollbar.
+    @Published public internal(set) var scrollbar: TerminalScrollbar?
+
     #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
         /// Increments for every OSC 133 command-finished event, including when
         /// consecutive commands have identical exit codes and durations.
         @Published public internal(set) var commandFinishedSequence: UInt64 = 0
         @Published public internal(set) var progressReport: TerminalProgressReport?
-        @Published public internal(set) var scrollbarMetrics: TerminalScrollbarMetrics?
     #endif
 
     public internal(set) weak var surface: TerminalSurface?

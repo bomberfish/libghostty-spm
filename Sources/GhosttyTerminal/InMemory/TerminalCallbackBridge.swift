@@ -76,16 +76,19 @@ final class TerminalCallbackBridge {
                 .terminalDidReportProgress(state: state, percent: percent)
 
         case GHOSTTY_ACTION_SCROLLBAR:
-            #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
-                let scrollbar = action.action.scrollbar
-                let metrics = TerminalScrollbarMetrics(
-                    total: scrollbar.total,
-                    offset: scrollbar.offset,
-                    length: scrollbar.len
+            let payload = action.action.scrollbar
+            TerminalDebugLog.log(
+                .actions,
+                "callback action=scrollbar total=\(payload.total) offset=\(payload.offset) len=\(payload.len)"
+            )
+            (delegate as? any TerminalSurfaceScrollbarDelegate)?
+                .terminalDidUpdateScrollbar(
+                    TerminalScrollbar(
+                        total: payload.total,
+                        offset: payload.offset,
+                        len: payload.len
+                    )
                 )
-                (delegate as? any TerminalSurfaceScrollbarDelegate)?
-                    .terminalDidUpdateScrollbar(metrics)
-            #endif
 
         case GHOSTTY_ACTION_COMMAND_FINISHED:
             let finished = action.action.command_finished

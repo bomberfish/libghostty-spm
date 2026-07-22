@@ -16,6 +16,7 @@ extension TerminalViewState:
     TerminalSurfaceBellDelegate,
     TerminalSurfaceDesktopNotificationDelegate,
     TerminalSurfacePwdDelegate,
+    TerminalSurfaceScrollbarDelegate,
     TerminalSurfaceCommandFinishedDelegate,
     TerminalSurfaceLifecycleDelegate
 {
@@ -54,6 +55,10 @@ extension TerminalViewState:
         applyDelegateUpdate { $0.workingDirectory = path }
     }
 
+    public func terminalDidUpdateScrollbar(_ scrollbar: TerminalScrollbar) {
+        applyDelegateUpdate { $0.scrollbar = scrollbar }
+    }
+
     public func terminalDidFinishCommand(exitCode: Int?, durationNanos: UInt64) {
         applyDelegateUpdate {
             $0.lastCommandExitCode = exitCode
@@ -72,9 +77,7 @@ extension TerminalViewState:
     public func terminalDidDetachSurface() {
         applyDelegateUpdate {
             $0.surface = nil
-            #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
-                $0.scrollbarMetrics = nil
-            #endif
+            $0.scrollbar = nil
         }
     }
 
@@ -96,10 +99,7 @@ extension TerminalViewState:
 }
 
 #if os(macOS) && canImport(AppKit) && !canImport(UIKit)
-    extension TerminalViewState:
-        TerminalSurfaceProgressReportDelegate,
-        TerminalSurfaceScrollbarDelegate
-    {
+    extension TerminalViewState: TerminalSurfaceProgressReportDelegate {
         public func terminalDidReportProgress(
             state: TerminalProgressState,
             percent: Int?
@@ -109,10 +109,6 @@ extension TerminalViewState:
                     ? nil
                     : TerminalProgressReport(state: state, percent: percent)
             }
-        }
-
-        public func terminalDidUpdateScrollbar(_ metrics: TerminalScrollbarMetrics) {
-            applyDelegateUpdate { $0.scrollbarMetrics = metrics }
         }
     }
 #endif

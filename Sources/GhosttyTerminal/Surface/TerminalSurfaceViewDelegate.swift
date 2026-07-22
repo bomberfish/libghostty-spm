@@ -74,23 +74,27 @@ public enum TerminalProgressState: Sendable, Equatable {
             self.percent = percent
         }
     }
-
-    public struct TerminalScrollbarMetrics: Sendable, Equatable {
-        public let total: UInt64
-        public let offset: UInt64
-        public let length: UInt64
-
-        public init(total: UInt64, offset: UInt64, length: UInt64) {
-            self.total = total
-            self.offset = offset
-            self.length = length
-        }
-
-        public var isAtBottom: Bool {
-            offset >= total || length >= total - offset
-        }
-    }
 #endif
+
+/// Scrollbar geometry reported by the terminal, in rows: `offset` rows are
+/// scrolled off above the viewport, `len` rows are visible, out of `total`
+/// rows of content (scrollback + screen).
+public struct TerminalScrollbar: Equatable, Sendable {
+    public let total: UInt64
+    public let offset: UInt64
+    public let len: UInt64
+
+    public init(total: UInt64, offset: UInt64, len: UInt64) {
+        self.total = total
+        self.offset = offset
+        self.len = len
+    }
+
+    /// Whether the viewport is scrolled to (or past) the bottom of the content.
+    public var isAtBottom: Bool {
+        offset >= total || len >= total - offset
+    }
+}
 
 /// OSC 9;4 progress report (state + 0-100 percent, nil percent when the
 /// emitter didn't provide one — e.g. INDETERMINATE / REMOVE).
@@ -99,12 +103,11 @@ public protocol TerminalSurfaceProgressReportDelegate: TerminalSurfaceViewDelega
     func terminalDidReportProgress(state: TerminalProgressState, percent: Int?)
 }
 
-#if os(macOS) && canImport(AppKit) && !canImport(UIKit)
-    @MainActor
-    public protocol TerminalSurfaceScrollbarDelegate: TerminalSurfaceViewDelegate {
-        func terminalDidUpdateScrollbar(_ metrics: TerminalScrollbarMetrics)
-    }
-#endif
+/// The scrollbar geometry changed (the viewport scrolled or the content grew).
+@MainActor
+public protocol TerminalSurfaceScrollbarDelegate: TerminalSurfaceViewDelegate {
+    func terminalDidUpdateScrollbar(_ scrollbar: TerminalScrollbar)
+}
 
 /// Fires when a shell-integration-aware command exits. `exitCode` is nil
 /// when not reported; `duration` is the wall clock in nanoseconds.
